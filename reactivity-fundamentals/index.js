@@ -71,10 +71,10 @@ const data = defineReactive({
   value1: 'value1',
   value2: 'value2'
 })
-effect(() => {
-  console.log('执行了f1:');
-  effect(() => {
-    console.log('执行了f2:');
+effect(function fn1 () {
+  console.log('执行了fn1:');
+  effect(function fn2 () {
+    console.log('执行了fn2:');
     const a = data.value2
   })
   const a = data.value1
