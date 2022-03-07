@@ -11,7 +11,7 @@ let effectTrackDepth = 0
 // 位标记
 let trackOpBit = 1
 
-function reactive(target) {
+function reactive (target) {
   // 如果已经reactive过，直接拿缓存
   if (proxyMap.has(target)) return proxyMap.get(target)
   // 简单类型无法proxy，直接返回值即可
@@ -21,11 +21,10 @@ function reactive(target) {
     get,
     set,
   })
-  proxy
   return proxy
 }
 
-function get(target, key, reciver) {
+function get (target, key, reciver) {
   const res = Reflect.get(target, key, reciver)
   // 收集
   track(target, key)
@@ -36,7 +35,7 @@ function get(target, key, reciver) {
   return res
 }
 
-function set(target, key, value, reciver) {
+function set (target, key, value, reciver) {
   const oldValue = target[key]
   const res = Reflect.set(target, key, value, reciver)
   // 触发
@@ -45,7 +44,7 @@ function set(target, key, value, reciver) {
 }
 
 // 收集
-function track(target, key) {
+function track (target, key) {
   // deps的统一管理
   let depsMap = targetMap.get(target)
   if (!depsMap) {
@@ -69,7 +68,7 @@ function track(target, key) {
 }
 
 // 触发
-function trigger(target, key, value, oldValue) {
+function trigger (target, key, value, oldValue) {
   if (value === oldValue) return
   let depsMap = targetMap.get(target)
   if (!depsMap) return
@@ -79,24 +78,24 @@ function trigger(target, key, value, oldValue) {
 }
 
 // 创建Dep
-function createDep() {
+function createDep () {
   const dep = new Set()
   dep.w = 0 // 旧标记
   dep.n = 0 // 新标记
   return dep
 }
 // 判断原来是否标记过
-function wasTrack(dep) {
+function wasTrack (dep) {
   return (dep.w & trackOpBit) > 0
 }
 // 判断本次是否标记过
-function newTrack(dep) {
+function newTrack (dep) {
   return (dep.n & trackOpBit) > 0
 }
-function initDepMarkers({ deps }) {
+function initDepMarkers ({ deps }) {
   deps.forEach((dep) => (dep.w |= trackOpBit))
 }
-function finalizeDepMarkers(effect) {
+function finalizeDepMarkers (effect) {
   const { deps } = effect
   if (deps.length) {
     let ptr = 0
@@ -115,7 +114,7 @@ function finalizeDepMarkers(effect) {
   }
 }
 
-function effect(fn) {
+function effect (fn) {
   const effect = function () {
     try {
       // 标记effect层级
@@ -141,9 +140,9 @@ const data = reactive({
   value1: 'value1',
   value2: 'value2',
 })
-effect(function fn1() {
+effect(function fn1 () {
   console.log('执行了fn1:')
-  effect(function fn2() {
+  effect(function fn2 () {
     console.log('执行了fn2:')
     const a = data.value2
   })
