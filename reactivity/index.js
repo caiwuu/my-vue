@@ -9,17 +9,17 @@ let effectTrackDepth = 0
 let activeEffect = null
 let trackOpBit = 1
 // 判断原来是否标记过
-function wasTrack (dep) {
+function wasTrack(dep) {
   return (dep.w & trackOpBit) > 0
 }
 // 判断本次是否标记过
-function newTrack (dep) {
+function newTrack(dep) {
   return (dep.n & trackOpBit) > 0
 }
-function initDepMarkers ({ deps }) {
+function initDepMarkers({ deps }) {
   deps.forEach((dep) => (dep.w |= trackOpBit))
 }
-function finalizeDepMarkers (effect) {
+function finalizeDepMarkers(effect) {
   // debugger
   const { deps } = effect
   if (deps.length) {
@@ -38,7 +38,7 @@ function finalizeDepMarkers (effect) {
     deps.length = ptr
   }
 }
-function effect (fn) {
+function effect(fn) {
   const effectFn = () => {
     trackOpBit = 1 << ++effectTrackDepth
     // celanup(effectFn)
@@ -50,11 +50,17 @@ function effect (fn) {
     finalizeDepMarkers(effectFn)
     trackOpBit = 1 << --effectTrackDepth
     activeEffect = effctStack[effctStack.length - 1]
+    effect.scope = false
   }
   effectFn.deps = []
   effectFn()
 }
-function track (target, key) {
+function track(target, key) {
+  if (effctStack.length > 1) {
+    if (effctStack[effctStack.length - 2].wasTrack) {
+      return
+    }
+  }
   if (!activeEffect) return
   let depsMap = bucket.get(target)
   if (!depsMap) {
@@ -72,11 +78,12 @@ function track (target, key) {
     shouldTrack = !wasTrack(deps) // 原本没有
   }
   if (shouldTrack) {
+    activeEffect.wasTrack = true
     deps.add(activeEffect)
     activeEffect.deps.push(deps)
   }
 }
-function trigger (target, key) {
+function trigger(target, key) {
   const depsMap = bucket.get(target)
   if (!depsMap) return
   const deps = depsMap.get(key)
@@ -88,7 +95,7 @@ function trigger (target, key) {
   })
   depsToRun && depsToRun.forEach((effectFn) => effectFn())
 }
-function celanup (effectFn) {
+function celanup(effectFn) {
   for (let i = 0; i < effectFn.deps.length; i++) {
     const deps = effectFn.deps[i]
     deps.delete(effectFn)
@@ -96,15 +103,13 @@ function celanup (effectFn) {
   effectFn.deps.length = 0
 }
 
-
-
-function defineReactive (data) {
+function defineReactive(data) {
   return new Proxy(data, {
-    get (target, key) {
+    get(target, key) {
       track(target, key)
       return Reflect.get(target, key)
     },
-    set (target, key, value) {
+    set(target, key, value) {
       Reflect.set(target, key, value)
       trigger(target, key)
     },
@@ -115,9 +120,9 @@ const data = defineReactive({
   value1: 'value1',
   value2: 'value2',
 })
-effect(function fn1 () {
+effect(function fn1() {
   console.log('执行了fn1:')
-  effect(function fn2 () {
+  effect(function fn2() {
     console.log('执行了fn2:')
     const a = data.value2
   })
